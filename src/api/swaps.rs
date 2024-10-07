@@ -1,11 +1,9 @@
-use bson::{doc, to_document};
-use warp::Filter;
-use mongodb::Collection;
 use crate::models::swaps_history::SwapHistory;
+use bson::{doc, to_document};
 use futures::stream::StreamExt;
+use mongodb::Collection;
 use serde::Deserialize;
-use warp::reply::{json, with_status};
-use warp::http::StatusCode;
+use actix_web::{web, HttpResponse, Responder};
 
 #[derive(Debug, Deserialize)]
 pub struct SwapQueryParams {
@@ -17,96 +15,76 @@ pub struct SwapQueryParams {
     order: Option<String>,
 }
 
-pub fn swaps_history_route(collection: Collection<SwapHistory>) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("swaps-history")
-        .and(warp::get())
-        .and(warp::query::<SwapQueryParams>())
-        .and_then({
-            let collection = collection.clone();
-            move |params: SwapQueryParams| {
-                let collection = collection.clone();
-                async move {
-                    let mut filter_conditions = Vec::new();
+pub async fn swaps_history_route(
+    query: web::Query<SwapQueryParams>,
+    collection: web::Data<Collection<SwapHistory>>,
+) -> impl Responder {
+    let params = query.into_inner();
+    let mut filter_conditions = Vec::new();
 
-                    if let (Some(start), Some(end)) = (params.start_time, params.end_time) {
-                        if start >= end {
-                            return Ok::<_, warp::Rejection>(with_status(
-                                json(&"start_time must be less than end_time"),
-                                StatusCode::BAD_REQUEST,
-                            ));
-                        }
-                        filter_conditions.push(doc! { "startTime": { "$gte": start } });
-                        filter_conditions.push(doc! { "endTime": { "$lte": end } });
-                    } else if let Some(start) = params.start_time {
-                        filter_conditions.push(doc! { "startTime": { "$gte": start } });
-                    } else if let Some(end) = params.end_time {
-                        filter_conditions.push(doc! { "endTime": { "$lte": end } });
-                    }
+    if let (Some(start), Some(end)) = (params.start_time, params.end_time) {
+        if start >= end {
+            return HttpResponse::BadRequest().json("start_time must be less than end_time");
+        }
+        filter_conditions.push(doc! { "startTime": { "$gte": start } });
+        filter_conditions.push(doc! { "endTime": { "$lte": end } });
+    } else if let Some(start) = params.start_time {
+        filter_conditions.push(doc! { "startTime": { "$gte": start } });
+    } else if let Some(end) = params.end_time {
+        filter_conditions.push(doc! { "endTime": { "$lte": end } });
+    }
 
-                    let filter = if !filter_conditions.is_empty() {
-                        doc! { "$and": filter_conditions }
-                    } else {
-                        doc! {}
-                    };
+    let filter = if !filter_conditions.is_empty() {
+        doc! { "$and": filter_conditions }
+    } else {
+        doc! {}
+    };
 
-                    let limit = params.limit.unwrap_or(10).clamp(1, 100) as i64;
-                    let skip = ((params.page.unwrap_or(1).max(1) - 1) * limit as u32) as u64;
+    let limit = params.limit.unwrap_or(10).clamp(1, 100) as i64;
+    let skip = ((params.page.unwrap_or(1).max(1) - 1) * params.limit.unwrap_or(10)) as u64;
 
-                    let sort_doc = if let Some(sort_by) = params.sort_by {
-                        let sort_order = match params.order.as_deref() {
-                            Some("asc") => 1,
-                            Some("desc") | _ => -1,
-                        };
-                        doc! { &sort_by: sort_order }
-                    } else {
-                        doc! { "startTime": -1 }
-                    };
+    let sort_doc = if let Some(sort_by) = params.sort_by {
+        let sort_order = match params.order.as_deref() {
+            Some("asc") => 1,
+            Some("desc") | _ => -1,
+        };
+        doc! { &sort_by: sort_order }
+    } else {
+        doc! { "startTime": -1 }
+    };
 
-                    let mut cursor = match collection.find(filter)
-                        .sort(sort_doc)
-                        .skip(skip)
-                        .limit(limit)
-                        .await {
-                        Ok(cursor) => cursor,
-                        Err(e) => {
-                            eprintln!("Error fetching data: {:?}", e);
-                            return Ok::<_, warp::Rejection>(with_status(
-                                json(&"Error fetching data"),
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                            ));
-                        }
-                    };
+    let mut cursor = match collection
+        .find(filter)
+        .sort(sort_doc)
+        .skip(skip)
+        .limit(limit)
+        .await
+    {
+        Ok(cursor) => cursor,
+        Err(e) => {
+            eprintln!("Error fetching data: {:?}", e);
+            return HttpResponse::InternalServerError().json("Error fetching data");
+        }
+    };
 
-                    let mut histories = Vec::new();
-                    while let Some(result) = cursor.next().await {
-                        match result {
-                            Ok(raw_history) => {
-                                let mut response = to_document(&raw_history).unwrap();
-                                response.remove("_id");
-                                histories.push(response);
-                            }
-                            Err(e) => {
-                                eprintln!("Error processing data: {:?}", e);
-                                return Ok::<_, warp::Rejection>(with_status(
-                                    json(&"Error processing data"),
-                                    StatusCode::INTERNAL_SERVER_ERROR,
-                                ));
-                            }
-                        }
-                    }
-
-                    if histories.is_empty() {
-                        Ok::<_, warp::Rejection>(with_status(
-                            json(&"No data found"),
-                            StatusCode::NOT_FOUND,
-                        ))
-                    } else {
-                        Ok::<_, warp::Rejection>(with_status(
-                            json(&histories),
-                            StatusCode::OK,
-                        ))
-                    }
-                }
+    let mut histories = Vec::new();
+    while let Some(result) = cursor.next().await {
+        match result {
+            Ok(raw_history) => {
+                let mut response = to_document(&raw_history).unwrap();
+                response.remove("_id");
+                histories.push(response);
             }
-        })
+            Err(e) => {
+                eprintln!("Error processing data: {:?}", e);
+                return HttpResponse::InternalServerError().json("Error processing data");
+            }
+        }
+    }
+
+    if histories.is_empty() {
+        HttpResponse::NotFound().json("No data found")
+    } else {
+        HttpResponse::Ok().json(histories)
+    }
 }

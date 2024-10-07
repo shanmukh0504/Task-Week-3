@@ -1,17 +1,11 @@
 // use std::env;
-// use crate::models::depth_history::DepthHistory;
-// use services::fetch_depth::_fetch_and_store_data;
-// use crate::models::runepool_history::RunePoolHistory;
-// use services::fetch_runepool::_fetch_and_store_runepool_data;
-// use crate::models::swaps_history::SwapHistory;
-// use services::fetch_swaps::_fetch_and_store_swaps_data;
-// use crate::models::earnings_history::EarningsHistory;
-// use crate::models::pools_history::PoolHistory;
-// use services::fetch_earnings::_fetch_and_store_earnings_and_pools;
+// use crate::models::{depth_history::DepthHistory, runepool_history::RunePoolHistory, swaps_history::SwapHistory, earnings_history::EarningsHistory, pools_history::PoolHistory};
+// use services::{fetch_depth::_fetch_and_store_data, fetch_runepool::_fetch_and_store_runepool_data, fetch_swaps::_fetch_and_store_swaps_data, fetch_earnings::_fetch_and_store_earnings_and_pools};
 
+use api::{depth_history::depth_history_route, earnings::earnings_with_pools_route, runepool::runepool_history_route, swaps::swaps_history_route};
 use dotenv::dotenv;
 use std::error::Error;
-use warp::Filter;
+use actix_web::{web, App, HttpServer};
 
 mod api;
 mod db;
@@ -57,22 +51,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .database("historical_db")
         .collection::<models::pools_history::PoolHistory>("pools_history");
 
-    let runepool_route = api::runepool::runepool_history_route(runepool_collection.clone());
-    let depth_route = api::depth_history::depth_history_route(depth_collection.clone());
-    let swaps_route = api::swaps::swaps_history_route(swap_collection.clone());
-    let earnings_route = api::earnings::earnings_with_pools_route(
-        earnings_collection.clone(),
-        pools_collection.clone(),
-    );
-    let api_routes = warp::path("api").and(
-        runepool_route
-            .or(depth_route)
-            .or(swaps_route)
-            .or(earnings_route),
-    );
-
     println!("Starting the server on port 3030...");
-    warp::serve(api_routes).run(([127, 0, 0, 1], 3030)).await;
-
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(runepool_collection.clone()))
+            .app_data(web::Data::new(depth_collection.clone()))
+            .app_data(web::Data::new(swap_collection.clone()))
+            .app_data(web::Data::new(earnings_collection.clone()))
+            .app_data(web::Data::new(pools_collection.clone()))
+            .route("/api/depth-history", web::get().to(depth_history_route))
+            .route("/api/runepool-history", web::get().to(runepool_history_route))
+            .route("/api/earnings", web::get().to(earnings_with_pools_route))
+            .route("/api/swaps-history", web::get().to(swaps_history_route))
+    })
+    .bind("0.0.0.0:3030")?
+    .run()
+    .await?;
     Ok(())
 }
