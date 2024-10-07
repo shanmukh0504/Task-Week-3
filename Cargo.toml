@@ -1,0 +1,18 @@
+[package]
+name = "rust-midgard-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mongodb = "3.0.1"  # MongoDB driver for Rust
+tokio = { version = "1.0", features = ["full"] }  # For async programming
+serde = { version = "1.0", features = ["derive"] }  # For serialization/deserialization
+serde_with = "3.10.0"
+chrono = { version = "0.4.37", features = ["serde"] }  # Enable serde feature
+serde_json = "1.0"  # For JSON handling
+warp = "0.3"  # For building the API server
+dotenv = "0.15.0"
+reqwest = { version = "0.12.7", features = ["json"] }
+bson = "2.0"
+futures = "0.3.29"
+lazy_static = "1.4.0"
