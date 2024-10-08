@@ -1,7 +1,3 @@
-// use std::env;
-// use crate::models::{depth_history::DepthHistory, runepool_history::RunePoolHistory, swaps_history::SwapHistory, earnings_history::EarningsHistory, pools_history::PoolHistory};
-// use services::{fetch_depth::_fetch_and_store_data, fetch_runepool::_fetch_and_store_runepool_data, fetch_swaps::_fetch_and_store_swaps_data, fetch_earnings::_fetch_and_store_earnings_and_pools};
-
 use api::{depth_history::depth_history_route, earnings::earnings_with_pools_route, runepool::runepool_history_route, swaps::swaps_history_route};
 use dotenv::dotenv;
 use std::error::Error;
@@ -11,27 +7,20 @@ mod api;
 mod db;
 mod models;
 mod services;
+mod cron_job;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     dotenv().ok();
 
     let db = db::connection::get_db().await?;
-    
-    // let pool = env::var("POOL").expect("POOL must be set in .env");
-    // let from_timestamp: i64 = env::var("START_TIME").expect("START_TIME must be set in .env").parse::<i64>().expect("Invalid START_TIME format");
-    // let target_timestamp: i64 = env::var("END_TIME").expect("END_TIME must be set in .env").parse::<i64>().expect("Invalid END_TIME format");
 
-    // let collection = db.database("historical_db").collection::<DepthHistory>("depth_history");
-    // _fetch_and_store_data(pool, &collection, from_timestamp, target_timestamp).await?;
-    // let collection = db.database("historical_db").collection::<RunePoolHistory>("runepool_history");
-    // _fetch_and_store_runepool_data(&collection, from_timestamp, target_timestamp).await?;
-    // let collection = db.database("historical_db").collection::<SwapHistory>("swaps_history");
-    // _fetch_and_store_swaps_data(pool, &collection, from_timestamp, target_timestamp).await?;
-    // let earnings_collection = db.database("historical_db").collection::<EarningsHistory>("earnings_history");
-    // let pools_collection = db.database("historical_db").collection::<PoolHistory>("pools_history");
-    // _fetch_and_store_earnings_and_pools(&earnings_collection, &pools_collection, from_timestamp, target_timestamp).await?;
-
+    let db_clone = db.clone();
+    tokio::spawn(async move {
+        if let Err(e) = cron_job::start_cron_job(db_clone).await {
+            eprintln!("Error in cron job: {:?}", e);
+        }
+    });
 
     // Routes
 
