@@ -2,13 +2,13 @@ use crate::models::runepool_history::RunePoolHistory;
 use bson::{doc, to_document};
 use futures::stream::StreamExt;
 use mongodb::Collection;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use actix_web::{web, HttpResponse, Responder};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RunePoolQueryParams {
-    start_time: Option<i64>,
-    end_time: Option<i64>,
+    from: Option<i64>,
+    to: Option<i64>,
     page: Option<u32>,
     limit: Option<u32>,
     sort_by: Option<String>,
@@ -22,15 +22,15 @@ pub async fn runepool_history_route(
     let params = query.into_inner();
     let mut filter_conditions = Vec::new();
 
-    if let (Some(start), Some(end)) = (params.start_time, params.end_time) {
+    if let (Some(start), Some(end)) = (params.from, params.to) {
         if start >= end {
             return HttpResponse::BadRequest().json("start_time must be less than end_time");
         }
         filter_conditions.push(doc! { "startTime": { "$gte": start } });
         filter_conditions.push(doc! { "endTime": { "$lte": end } });
-    } else if let Some(start) = params.start_time {
+    } else if let Some(start) = params.from {
         filter_conditions.push(doc! { "startTime": { "$gte": start } });
-    } else if let Some(end) = params.end_time {
+    } else if let Some(end) = params.to {
         filter_conditions.push(doc! { "endTime": { "$lte": end } });
     }
 

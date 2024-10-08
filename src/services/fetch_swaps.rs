@@ -12,6 +12,8 @@ pub async fn _fetch_and_store_swaps_data(
 ) -> Result<(), Box<dyn Error>> {
     let mut current_timestamp = from_timestamp;
 
+    println!("Fetching swaps history");
+
     while current_timestamp <= target_timestamp {
         let api_url = format!(
             "https://midgard.ninerealms.com/v2/history/swaps?interval=hour&pool={}&count=400&from={}",

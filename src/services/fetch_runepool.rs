@@ -11,6 +11,8 @@ pub async fn _fetch_and_store_runepool_data(
 ) -> Result<(), Box<dyn Error>> {
     let mut current_timestamp = from_timestamp;
 
+    println!("Fetching runepool history");
+
     while current_timestamp <= target_timestamp {
         let api_url = format!(
             "https://midgard.ninerealms.com/v2/history/runepool?interval=hour&count=400&from={}",

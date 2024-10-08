@@ -11,6 +11,8 @@ pub async fn _fetch_and_store_data(
     target_timestamp: i64,
 ) -> Result<(), Box<dyn Error>> {
     let mut current_timestamp = from_timestamp;
+    
+    println!("Fetching depth history");
 
     while current_timestamp <= target_timestamp {
         let api_url = format!(

@@ -13,6 +13,8 @@ pub async fn _fetch_and_store_earnings_and_pools(
     target_timestamp: i64,
 ) -> Result<(), Box<dyn Error>> {
     let mut current_timestamp = from_timestamp;
+    
+    println!("Fetching earnings history");
 
     while current_timestamp <= target_timestamp {
         let api_url = format!(

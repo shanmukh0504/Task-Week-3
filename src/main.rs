@@ -11,23 +11,25 @@ mod api;
 mod db;
 mod models;
 mod services;
+mod data_fetcher;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     dotenv().ok();
 
     let db = db::connection::get_db().await?;
+    // data_fetcher::_fetch_and_store_all_data(&db).await?;
     
     // let pool = env::var("POOL").expect("POOL must be set in .env");
     // let from_timestamp: i64 = env::var("START_TIME").expect("START_TIME must be set in .env").parse::<i64>().expect("Invalid START_TIME format");
     // let target_timestamp: i64 = env::var("END_TIME").expect("END_TIME must be set in .env").parse::<i64>().expect("Invalid END_TIME format");
 
     // let collection = db.database("historical_db").collection::<DepthHistory>("depth_history");
-    // _fetch_and_store_data(pool, &collection, from_timestamp, target_timestamp).await?;
+    // _fetch_and_store_data(pool.clone(), &collection, from_timestamp, target_timestamp).await?;
     // let collection = db.database("historical_db").collection::<RunePoolHistory>("runepool_history");
     // _fetch_and_store_runepool_data(&collection, from_timestamp, target_timestamp).await?;
     // let collection = db.database("historical_db").collection::<SwapHistory>("swaps_history");
-    // _fetch_and_store_swaps_data(pool, &collection, from_timestamp, target_timestamp).await?;
+    // _fetch_and_store_swaps_data(pool.clone(), &collection, from_timestamp, target_timestamp).await?;
     // let earnings_collection = db.database("historical_db").collection::<EarningsHistory>("earnings_history");
     // let pools_collection = db.database("historical_db").collection::<PoolHistory>("pools_history");
     // _fetch_and_store_earnings_and_pools(&earnings_collection, &pools_collection, from_timestamp, target_timestamp).await?;

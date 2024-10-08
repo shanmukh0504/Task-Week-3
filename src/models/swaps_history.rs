@@ -63,3 +63,63 @@ pub struct SwapHistory {
     #[serde(rename = "totalVolumeUSD")]
     pub total_volume_usd: f64,
 }
+
+#[derive(Debug, Serialize)]
+pub struct Metadata {
+    #[serde(rename = "averageSlip")]
+    pub average_slip: String,
+    #[serde(rename = "endTime")]
+    pub end_time: String,
+    #[serde(rename = "runePriceUSD")]
+    pub rune_price_usd: String,
+    #[serde(rename = "startTime")]
+    pub start_time: String,
+    #[serde(rename = "synthMintAverageSlip")]
+    pub synth_mint_average_slip: String,
+    #[serde(rename = "synthMintCount")]
+    pub synth_mint_count: String,
+    #[serde(rename = "synthMintFees")]
+    pub synth_mint_fees: String,
+    #[serde(rename = "synthMintVolume")]
+    pub synth_mint_volume: String,
+    #[serde(rename = "synthMintVolumeUSD")]
+    pub synth_mint_volume_usd: String,
+    #[serde(rename = "synthRedeemAverageSlip")]
+    pub synth_redeem_average_slip: String,
+    #[serde(rename = "synthRedeemCount")]
+    pub synth_redeem_count: String,
+    #[serde(rename = "synthRedeemFees")]
+    pub synth_redeem_fees: String,
+    #[serde(rename = "synthRedeemVolume")]
+    pub synth_redeem_volume: String,
+    #[serde(rename = "synthRedeemVolumeUSD")]
+    pub synth_redeem_volume_usd: String,
+    #[serde(rename = "toAssetAverageSlip")]
+    pub to_asset_average_slip: String,
+    #[serde(rename = "toAssetCount")]
+    pub to_asset_count: String,
+    #[serde(rename = "toAssetFees")]
+    pub to_asset_fees: String,
+    #[serde(rename = "toAssetVolume")]
+    pub to_asset_volume: String,
+    #[serde(rename = "toAssetVolumeUSD")]
+    pub to_asset_volume_usd: String,
+    #[serde(rename = "toRuneAverageSlip")]
+    pub to_rune_average_slip: String,
+    #[serde(rename = "toRuneCount")]
+    pub to_rune_count: String,
+    #[serde(rename = "toRuneFees")]
+    pub to_rune_fees: String,
+    #[serde(rename = "toRuneVolume")]
+    pub to_rune_volume: String,
+    #[serde(rename = "toRuneVolumeUSD")]
+    pub to_rune_volume_usd: String,
+    #[serde(rename = "totalCount")]
+    pub total_count: String,
+    #[serde(rename = "totalFees")]
+    pub total_fees: String,
+    #[serde(rename = "totalVolume")]
+    pub total_volume: String,
+    #[serde(rename = "totalVolumeUSD")]
+    pub total_volume_usd: String,
+}
